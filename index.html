@@ -173,12 +173,15 @@
   #fireBtn{right:22px;bottom:24px;width:92px;height:92px;font-size:13px;letter-spacing:0.3px;
     background:rgba(180,189,194,0.88);color:#15191b;border:2px solid var(--amber);}
   #jumpBtn{right:134px;bottom:98px;width:58px;height:58px;font-size:18px;}
-  #crouchBtn{right:200px;bottom:62px;width:54px;height:54px;font-size:11px;}
   .mbtn.on{border-color:var(--amber);background:rgba(180,189,194,0.5);}
-  #reloadBtnMobile{right:24px;bottom:128px;width:54px;height:54px;font-size:14px;}
-  #weaponBtnMobile{right:134px;bottom:28px;width:54px;height:54px;font-size:16px;}
+  #scopeBtn{right:22px;bottom:128px;width:58px;height:58px;font-size:24px;}
   #pauseBtnMobile{top:16px;right:16px;width:42px;height:42px;font-size:13px;}
-  #viewBtnMobile{top:64px;right:16px;width:42px;height:42px;font-size:10.5px;}
+  /* кольцо-индикатор: удержание джойстика по центру → присед */
+  #joyRing{position:absolute;inset:-5px;border-radius:50%;pointer-events:none;opacity:0;
+    background:conic-gradient(var(--amber) calc(var(--p,0) * 360deg), transparent 0);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+            mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));}
+  #joyRing.show{opacity:1;}
 
   #helpBtn{position:fixed;top:16px;right:66px;width:42px;height:42px;border-radius:50%;z-index:7;
     background:rgba(46,54,60,0.8);border:1px solid var(--line);color:var(--text);
@@ -265,22 +268,27 @@
   .chip.selected{border-color:var(--amber);background:#333c42;color:var(--amber);}
   .preview-seg{margin-bottom:14px;}
 
-  @media (min-width:900px){
-    #profileOverlay{background:linear-gradient(90deg,rgba(15,17,19,0.12) 0%,rgba(15,17,19,0.12) 38%,
+  /* предпросмотр скина: широкий экран ПК или телефон в горизонтальном положении (класс ставит JS) */
+  body.wide-preview #profileOverlay{background:linear-gradient(90deg,rgba(15,17,19,0.12) 0%,rgba(15,17,19,0.12) 38%,
       rgba(15,17,19,0.82) 58%,rgba(15,17,19,0.9) 100%);}
-    #profileOverlay .center-panel{margin:auto 5vw auto auto;max-width:660px;width:100%;}
-    .acc-groups{grid-template-columns:1fr 1fr;gap:14px 22px;}
-  }
+  body.wide-preview #profileOverlay .center-panel{margin:auto 5vw auto auto;max-width:660px;width:100%;}
+  body.wide-preview .acc-groups{grid-template-columns:1fr 1fr;gap:14px 22px;}
+  /* телефон лёжа: персонаж слева, настройки справа в узкой колонке */
+  body.compact-preview #profileOverlay{background:linear-gradient(90deg,rgba(15,17,19,0.1) 0%,rgba(15,17,19,0.1) 36%,
+      rgba(15,17,19,0.85) 46%,rgba(15,17,19,0.92) 100%);padding:8px 0;}
+  body.compact-preview #profileOverlay .center-panel{margin:auto 2vw auto auto;width:54vw;max-width:none;padding:16px 18px;}
+  body.compact-preview .acc-groups{grid-template-columns:1fr;gap:10px;}
+  body.compact-preview #previewDrag{width:44%;}
 
   .preview-block{display:none;}
-  @media (min-width:900px){ .preview-block{display:block;} }
+  body.wide-preview .preview-block{display:block;}
 
   /* зона, за которую можно тянуть и поворачивать персонажа в профиле (только на широком экране) */
   #previewDrag{display:none;position:fixed;left:0;top:0;bottom:0;width:62%;z-index:1;cursor:grab;touch-action:none;}
   #previewDrag.grabbing{cursor:grabbing;}
   #profileOverlay .center-panel{position:relative;z-index:2;}
   .preview-hint{font-size:11.5px;color:var(--text-dim);margin:8px 0 0;}
-  @media (min-width:900px){ #previewDrag{display:block;} }
+  body.wide-preview #previewDrag{display:block;}
 
   .ammoLbl{font-size:9.5px;color:var(--text-dim);margin-top:1px;}
   #ammoBox.empty #ammoRes{color:var(--danger);}
@@ -454,6 +462,37 @@
     color:var(--text);font-size:20px;cursor:pointer;touch-action:none;}
   #ed3dVert button:active{border-color:var(--amber);}
   #mobileControls.ed3d .mbtn{display:none;}
+
+  /* ---- прицел снайперской винтовки ---- */
+  #scopeOverlay{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .08s;
+    background:radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0, rgba(0,0,0,0) 36vmin, #000 36.5vmin);}
+  #scopeOverlay::before,#scopeOverlay::after{content:"";position:absolute;left:50%;top:50%;
+    background:rgba(0,0,0,0.88);box-shadow:0 0 0 1px rgba(255,255,255,0.16);transform:translate(-50%,-50%);}
+  #scopeOverlay::before{width:72vmin;height:1px;}
+  #scopeOverlay::after{height:72vmin;width:1px;}
+  #hud.scoped #scopeOverlay{opacity:1;}
+  #hud.scoped #crosshair{display:none;}
+
+  /* ---- компактный HUD на телефоне ---- */
+  .is-mobile #minimapWrap{top:8px;left:8px;width:84px;height:84px;}
+  .is-mobile #minimapCanvas{width:84px;height:84px;}
+  .is-mobile #timerBox{top:8px;padding:5px 10px;min-width:70px;}
+  .is-mobile #timerVal{font-size:17px;}
+  .is-mobile #modeLabel{display:none;}
+  .is-mobile #healthBox{top:8px;left:100px;bottom:auto;width:132px;padding:6px 10px;}
+  .is-mobile #scoreBox{top:100px;left:8px;padding:5px 9px;font-size:11px;}
+  .is-mobile #ammoBox{top:62px;right:8px;bottom:auto;width:128px;padding:5px 10px;}
+  .is-mobile #ammoBox .ammoLbl{display:none;}
+  .is-mobile #ammoNums .cur{font-size:22px;}
+  .is-mobile #killFeed{top:134px;right:8px;width:170px;}
+  .is-mobile #helpBtn{top:8px;right:58px;}
+  .is-mobile #pauseBtnMobile{top:8px;right:8px;}
+  .is-mobile #toast{top:56px;}
+  .is-mobile #weaponSlots{bottom:8px;}
+  .is-mobile .wslot{padding:5px 8px;}
+  .is-mobile .wslot .wname{font-size:9.5px;}
+  .is-mobile .wslot .wammo{font-size:12px;margin-top:1px;}
+  .is-mobile .wslot .wammo small{font-size:9px;}
 </style>
 </head>
 <body>
@@ -536,7 +575,8 @@
       <div class="k">Space</div><div class="a">Прыжок (дважды — двойной прыжок)</div>
       <div class="k">C</div><div class="a">Присесть (держать)</div>
       <div class="k">R</div><div class="a">Перезарядка</div>
-      <div class="k">1 / 2 / 3</div><div class="a">Смена оружия</div>
+      <div class="k">1 – 5</div><div class="a">Смена оружия (4 — снайперка, 5 — граната)</div>
+      <div class="k">ПКМ</div><div class="a">Снайперка: прицел (держать)</div>
       <div class="k">←</div><div class="a">Вид от первого лица</div>
       <div class="k">→</div><div class="a">Вид от третьего лица</div>
       <div class="k">V</div><div class="a">Переключить вид</div>
@@ -544,14 +584,14 @@
       <div class="k">Esc</div><div class="a">Пауза</div>
     </div>
     <div class="controls-grid hidden" id="controlsMobile">
-      <div class="k">Джойстик</div><div class="a">Движение (к краю — бег)</div>
+      <div class="k">Джойстик</div><div class="a">Движение (к краю — бег). Держите по центру 2 сек — присесть / встать</div>
       <div class="k">Свайп справа</div><div class="a">Обзор</div>
-      <div class="k">ОГОНЬ</div><div class="a">Стрельба</div>
+      <div class="k">ОГОНЬ</div><div class="a">Стрельба / бросок гранаты</div>
       <div class="k">↑</div><div class="a">Прыжок (два нажатия — двойной)</div>
-      <div class="k">Сесть</div><div class="a">Присесть / встать</div>
-      <div class="k">R</div><div class="a">Перезарядка</div>
-      <div class="k">⇄</div><div class="a">Смена оружия</div>
-      <div class="k">Вид</div><div class="a">Смена вида (1/3 лицо)</div>
+      <div class="k">◎</div><div class="a">Прицел снайперки (кнопка появляется вместе с ней)</div>
+      <div class="k">Слоты внизу</div><div class="a">Смена оружия (4 — снайперка, 5 — граната)</div>
+      <div class="k">Тап по патронам</div><div class="a">Перезарядка</div>
+      <div class="k">Двойной тап</div><div class="a">Смена вида (1/3 лицо)</div>
       <div class="k">?</div><div class="a">Подсказка по клавишам</div>
     </div>
     <p class="mode-note" id="modeNote">Требуется мышь и клавиатура. Режим: игрок против ботов.</p>
@@ -597,7 +637,7 @@
         <button data-val="5.5">Бег</button>
         <button data-val="8.5">Спринт</button>
       </div>
-      <p class="preview-hint">Потяните мышкой по персонажу слева — он повернётся. Колесо мыши — приблизить.</p>
+      <p class="preview-hint" id="previewHint">Потяните мышкой по персонажу слева — он повернётся. Колесо мыши — приблизить.</p>
     </div>
 
     <div class="btn-row">
@@ -771,21 +811,22 @@
       <div class="k">Space</div><div class="a">Прыжок (дважды — двойной прыжок)</div>
       <div class="k">C</div><div class="a">Присесть (держать)</div>
       <div class="k">R</div><div class="a">Перезарядка</div>
-      <div class="k">1 / 2 / 3</div><div class="a">Смена оружия</div>
+      <div class="k">1 – 5</div><div class="a">Смена оружия (4 — снайперка, 5 — граната)</div>
+      <div class="k">ПКМ</div><div class="a">Снайперка: прицел (держать)</div>
       <div class="k">←</div><div class="a">Вид от первого лица</div>
       <div class="k">→</div><div class="a">Вид от третьего лица</div>
       <div class="k">V</div><div class="a">Переключить вид</div>
       <div class="k">Esc</div><div class="a">Пауза</div>
     </div>
     <div class="controls-grid hidden" id="helpControlsMobile">
-      <div class="k">Джойстик</div><div class="a">Движение (к краю — бег)</div>
+      <div class="k">Джойстик</div><div class="a">Движение (к краю — бег). Держите по центру 2 сек — присесть / встать</div>
       <div class="k">Свайп справа</div><div class="a">Обзор</div>
-      <div class="k">ОГОНЬ</div><div class="a">Стрельба</div>
+      <div class="k">ОГОНЬ</div><div class="a">Стрельба / бросок гранаты</div>
       <div class="k">↑</div><div class="a">Прыжок (два нажатия — двойной)</div>
-      <div class="k">Сесть</div><div class="a">Присесть / встать</div>
-      <div class="k">R</div><div class="a">Перезарядка</div>
-      <div class="k">⇄</div><div class="a">Смена оружия</div>
-      <div class="k">Вид</div><div class="a">Смена вида (1/3 лицо)</div>
+      <div class="k">◎</div><div class="a">Прицел снайперки (кнопка появляется вместе с ней)</div>
+      <div class="k">Слоты внизу</div><div class="a">Смена оружия (4 — снайперка, 5 — граната)</div>
+      <div class="k">Тап по патронам</div><div class="a">Перезарядка</div>
+      <div class="k">Двойной тап</div><div class="a">Смена вида (1/3 лицо)</div>
     </div>
     <div class="btn-row">
       <button class="btn-primary" id="helpBackBtn">Продолжить</button>
@@ -798,6 +839,7 @@
 <div id="hud" class="hidden">
   <div id="vignette"></div>
   <div id="dmgOverlay"></div>
+  <div id="scopeOverlay"></div>
 
   <div id="crosshair"><div class="ch-side ch-l"></div><div class="ch-side ch-r"></div></div>
   <div id="hitMarker"></div>
@@ -836,6 +878,8 @@
   <div class="wslot" data-idx="0"><span class="wname">Дробовик</span><span class="wammo">8</span></div>
   <div class="wslot selected" data-idx="1"><span class="wname">Винтовка</span><span class="wammo">40</span></div>
   <div class="wslot" data-idx="2"><span class="wname">Пистолет</span><span class="wammo">18</span></div>
+  <div class="wslot" data-idx="3"><span class="wname">Снайперка</span><span class="wammo">5</span></div>
+  <div class="wslot" data-idx="4"><span class="wname">Граната</span><span class="wammo">2</span></div>
 </div>
 
 <!-- HELP BUTTON (always available during play) -->
@@ -844,13 +888,10 @@
 <!-- MOBILE CONTROLS -->
 <div id="mobileControls" class="hidden">
   <div id="lookLayer"></div>
-  <div id="joystickBase"><div id="joystickThumb"></div></div>
+  <div id="joystickBase"><div id="joyRing"></div><div id="joystickThumb"></div></div>
   <button id="pauseBtnMobile" class="mbtn">❚❚</button>
-  <button id="viewBtnMobile" class="mbtn">Вид</button>
   <button id="jumpBtn" class="mbtn">↑</button>
-  <button id="crouchBtn" class="mbtn">Сесть</button>
-  <button id="reloadBtnMobile" class="mbtn">R</button>
-  <button id="weaponBtnMobile" class="mbtn">⇄</button>
+  <button id="scopeBtn" class="mbtn hidden">◎</button>
   <button id="fireBtn" class="mbtn">ОГОНЬ</button>
 </div>
 
@@ -1190,7 +1231,9 @@ var MAPS = (function(){
 var WEAPONS = [
   {name:'Дробовик', damage:9, pellets:8, fireRate:750, mag:8, reserveMax:40, pickup:9, auto:false, spread:0.15, reloadTime:2200, pitch:90},
   {name:'Винтовка', damage:16, fireRate:110, mag:40, reserveMax:200, pickup:45, auto:true, spread:0.028, reloadTime:1700, pitch:180},
-  {name:'Пистолет', damage:28, fireRate:260, mag:18, reserveMax:90, pickup:20, auto:false, spread:0.014, reloadTime:1100, pitch:260}
+  {name:'Пистолет', damage:28, fireRate:260, mag:18, reserveMax:90, pickup:20, auto:false, spread:0.014, reloadTime:1100, pitch:260},
+  {name:'Снайперка', damage:100, fireRate:1300, mag:5, reserveMax:25, pickup:4, auto:false, spread:0.05, reloadTime:2600, pitch:55, scope:true},
+  {name:'Граната', damage:110, fireRate:900, mag:2, reserveMax:4, pickup:1, auto:false, spread:0, reloadTime:1000, pitch:0, grenade:true, radius:6}
 ];
 
 var DIFFICULTIES = {
@@ -1281,7 +1324,7 @@ var DEFAULT_PROFILE = {
   gamesPlayed: 0, totalShotsFired: 0, totalShotsHit: 0, totalKills: 0, totalDeaths: 0,
   characterColor: CHARACTER_COLORS[0], accessories: [],
   coins: 0, ownedAcc: [], lastAdTime: 0,
-  weaponUpgrades: [{dmg:0,mag:0,rel:0,acc:0},{dmg:0,mag:0,rel:0,acc:0},{dmg:0,mag:0,rel:0,acc:0}]
+  weaponUpgrades: WEAPONS.map(function(){ return {dmg:0,mag:0,rel:0,acc:0}; })
 };
 
 function loadProfile(){
@@ -1307,7 +1350,7 @@ function loadProfile(){
       merged.accessories = merged.accessories.filter(function(id){
         var d = findAcc(id); return !!d && (!d.price || merged.ownedAcc.indexOf(id) !== -1);
       });
-      merged.weaponUpgrades = [0,1,2].map(function(i){
+      merged.weaponUpgrades = WEAPONS.map(function(_w, i){
         var src = (Array.isArray(parsed.weaponUpgrades) && parsed.weaponUpgrades[i]) || {};
         var o = {};
         ['dmg','mag','rel','acc'].forEach(function(t){ o[t] = Math.max(0, Math.min(5, Math.floor(Number(src[t]) || 0))); });
@@ -1342,6 +1385,9 @@ var helpReturnsToPause = false;
 var sensitivity = 1.2;
 var yaw = 0, pitch = 0, velocityY = 0, grounded = true, jumpsUsed = 0;
 var crouching = false, mobileCrouch = false;
+var scoped = false, scopeBlend = 0, scopePrevView = null, SCOPE_FOV = 18;
+var joyTouching = false, joyHoldT = 0, joyHoldFired = false, lastRingP = -1, JOY_HOLD_SEC = 2, JOY_DEAD = 0.2;
+var grenades = [], blasts = [], blastLight = null, GRENADE_FUSE = 2.3;
 var keys = {}, mouseDown = false;
 var joystickVec = {x:0, y:0};
 var lastShotTime = 0, recoilOffset = 0, bobTime = 0, runBlend = 0;
@@ -1355,8 +1401,8 @@ var profile = loadProfile();
 
 var player = {
   health:100, maxHealth:100, kills:0, deaths:0, shotsFired:0, shotsHit:0,
-  weaponIndex:1, ammo:[WEAPONS[0].mag, WEAPONS[1].mag, WEAPONS[2].mag],
-  reserve:[WEAPONS[0].reserveMax, WEAPONS[1].reserveMax, WEAPONS[2].reserveMax],
+  weaponIndex:1, ammo:WEAPONS.map(function(w){ return w.mag; }),
+  reserve:WEAPONS.map(function(w){ return w.reserveMax; }),
   reloading:false, alive:true
 };
 
@@ -1390,11 +1436,9 @@ var joystickBaseEl = document.getElementById('joystickBase');
 var joystickThumbEl = document.getElementById('joystickThumb');
 var fireBtnEl = document.getElementById('fireBtn');
 var jumpBtnEl = document.getElementById('jumpBtn');
-var crouchBtnEl = document.getElementById('crouchBtn');
-var reloadBtnMobileEl = document.getElementById('reloadBtnMobile');
-var weaponBtnMobileEl = document.getElementById('weaponBtnMobile');
+var scopeBtnEl = document.getElementById('scopeBtn');
+var joyRingEl = document.getElementById('joyRing');
 var pauseBtnMobileEl = document.getElementById('pauseBtnMobile');
-var viewBtnMobileEl = document.getElementById('viewBtnMobile');
 var helpBtnEl = document.getElementById('helpBtn');
 var profileEl = document.getElementById('profileOverlay');
 var helpOverlayEl = document.getElementById('helpOverlay');
@@ -1468,8 +1512,7 @@ function ceilingAt(x, z, radius, headY){
 
 function resetCrouch(){
   crouching = false; mobileCrouch = false; EYE_HEIGHT = STAND_EYE;
-  var b = document.getElementById('crouchBtn');
-  if (b) b.classList.remove('on');
+  joyHoldT = 0; joyHoldFired = false;
 }
 
 var toastEl = document.getElementById('toast');
@@ -1580,6 +1623,20 @@ function playHitSound(){
   osc.start(t); osc.stop(t+0.07);
 }
 
+/* шум с затуханием: бросок и взрыв гранаты */
+function playNoise(dur, lp, vol){
+  if (!audioCtx) return;
+  var len = Math.floor(audioCtx.sampleRate*dur);
+  var buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  var d = buf.getChannelData(0);
+  for (var i=0;i<len;i++) d[i] = (Math.random()*2 - 1) * Math.pow(1 - i/len, 2);
+  var src = audioCtx.createBufferSource(); src.buffer = buf;
+  var f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp;
+  var g = audioCtx.createGain(); g.gain.value = vol;
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+  src.start();
+}
+
 function playDamageSound(){
   if (!audioCtx) return;
   var t = audioCtx.currentTime;
@@ -1644,6 +1701,13 @@ function init(){
   buildMapCards();
   buildAccessoryChips();
 
+  if (isMobile) document.body.classList.add('is-mobile');
+  var ph = document.getElementById('previewHint');
+  if (ph && isMobile) ph.textContent = 'Потяните пальцем по персонажу слева — он повернётся.';
+  syncLayout();
+  window.addEventListener('resize', syncLayout);
+  window.addEventListener('orientationchange', function(){ setTimeout(syncLayout, 250); });
+
   if (typeof THREE === 'undefined'){
     showFatalError('Не удалось загрузить 3D-библиотеку (Three.js). Проверьте подключение к интернету и обновите страницу.');
     return;
@@ -1671,6 +1735,8 @@ function init(){
 
   buildGun();
   scene.add(camera);
+  blastLight = new THREE.PointLight(0xffa050, 0, 26);   /* одна постоянная вспышка для взрывов гранат */
+  scene.add(blastLight);
   buildHeadlamp();
   buildPlayerModel();
   buildPreviewScene();
@@ -1733,13 +1799,32 @@ function updatePreviewCamera(){
   if (!previewCamera) return;
   var W = window.innerWidth, H = window.innerHeight;
   previewCamera.aspect = W/H;
-  if (W >= 900) previewCamera.setViewOffset(W, H, Math.round(W*0.2), 0, W, H);
+  if (previewAvailable()) previewCamera.setViewOffset(W, H, Math.round(W*(document.body.classList.contains('compact-preview') ? 0.3 : 0.2)), 0, W, H);
   else previewCamera.clearViewOffset();
   previewCamera.updateProjectionMatrix();
 }
 
+/* Предпросмотр скина: широкий экран ПК или телефон в горизонтальном положении */
+function previewAvailable(){
+  var W = window.innerWidth, H = window.innerHeight;
+  return W >= 900 || (isMobile && W > H);
+}
+
+function syncLayout(){
+  var W = window.innerWidth, H = window.innerHeight;
+  var wide = previewAvailable();
+  var compact = wide && isMobile && W > H && H < 600;
+  document.body.classList.toggle('wide-preview', wide);
+  document.body.classList.toggle('compact-preview', compact);
+  if (scene && gameState === 'menu' && profileEl && !profileEl.classList.contains('hidden')){
+    if (wide && !profilePreviewOn) startPreview();
+    else if (!wide && profilePreviewOn) stopPreview();
+  }
+  updatePreviewCamera();
+}
+
 function startPreview(){
-  if (!previewScene || !playerModel || window.innerWidth < 900) return;
+  if (!previewScene || !playerModel || !previewAvailable()) return;
   previewScene.add(playerModel);
   playerModel.position.set(0, 0, 0);
   playerModel.visible = true;
@@ -1810,7 +1895,7 @@ function bindPreviewDrag(){
 /* ===================== WEAPON MODELS ===================== */
 
 function addWeaponModel(targetGroup, weaponType){
-  var colors = [0x5a4530, 0x2a2a2a, 0x1c1c1c];
+  var colors = [0x5a4530, 0x2a2a2a, 0x1c1c1c, 0x3b4a44, 0x55612f];
   var mat = new THREE.MeshStandardMaterial({color: colors[weaponType]});
   if (weaponType === 0){
     var sBody = new THREE.Mesh(new THREE.BoxGeometry(0.11,0.11,0.42), mat);
@@ -1826,11 +1911,37 @@ function addWeaponModel(targetGroup, weaponType){
     var rGrip = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.16,0.07), mat);
     rGrip.position.set(0,-0.13,0.16);
     targetGroup.add(rBody, rBarrel, rGrip);
-  } else {
+  } else if (weaponType === 2){
     var pBody = new THREE.Mesh(new THREE.BoxGeometry(0.075,0.1,0.24), mat);
     var pGrip = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.13,0.06), mat);
     pGrip.position.set(0,-0.1,0.09);
     targetGroup.add(pBody, pGrip);
+  } else if (weaponType === 3){
+    /* снайперская винтовка: длинный ствол, приклад и оптический прицел */
+    var dark = new THREE.MeshStandardMaterial({color:0x14181a});
+    var snBody = new THREE.Mesh(new THREE.BoxGeometry(0.085,0.1,0.7), mat);
+    var snBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.022,0.62,8), dark);
+    snBarrel.rotation.x = Math.PI/2; snBarrel.position.z = -0.62;
+    var snStock = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.15,0.26), mat);
+    snStock.position.set(0,-0.03,0.4);
+    var snGrip = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.14,0.06), mat);
+    snGrip.position.set(0,-0.12,0.14);
+    var snScope = new THREE.Mesh(new THREE.CylinderGeometry(0.032,0.032,0.26,10), dark);
+    snScope.rotation.x = Math.PI/2; snScope.position.set(0,0.095,-0.08);
+    var snLens = new THREE.Mesh(new THREE.CylinderGeometry(0.036,0.036,0.02,10),
+      new THREE.MeshStandardMaterial({color:0x4fa3ff, emissive:0x1a4a88, emissiveIntensity:0.6}));
+    snLens.rotation.x = Math.PI/2; snLens.position.set(0,0.095,-0.22);
+    targetGroup.add(snBody, snBarrel, snStock, snGrip, snScope, snLens);
+  } else {
+    /* граната: корпус, запал и чека */
+    var metal = new THREE.MeshStandardMaterial({color:0x8d949a});
+    var gBody = new THREE.Mesh(new THREE.SphereGeometry(0.075,14,10), mat);
+    gBody.scale.set(1,1.15,1);
+    var gTop = new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.03,0.04,8), metal);
+    gTop.position.y = 0.1;
+    var gLever = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.012,0.09), metal);
+    gLever.position.set(0.03,0.115,0);
+    targetGroup.add(gBody, gTop, gLever);
   }
 }
 
@@ -1842,6 +1953,7 @@ function buildGun(){
   var accent = new THREE.Mesh(new THREE.BoxGeometry(0.02,0.02,0.3), accentMat);
   accent.position.set(0.045,0.05,-0.1);
   accent.userData.keep = true;
+  accent.userData.accent = true;
   gunGroup.add(accent);
   gunGroup.position.set(0.28,-0.28,-0.6);
 
@@ -1861,11 +1973,16 @@ function updateWeaponModelForIndex(idx){
     if (c.material) c.material.dispose();
   });
   addWeaponModel(gunGroup, idx);
+  gunGroup.children.forEach(function(c){ if (c.userData.accent) c.visible = (idx !== 4); });
 }
 
 /* ===================== VIEW MODE (1 / 3 лицо) ===================== */
 
 function setViewMode(mode, announce){
+  if (scoped){                                   /* через прицел смотрим только от первого лица */
+    if (mode === 'third'){ scopePrevView = 'third'; return; }
+    scopePrevView = null;
+  }
   var changed = (mode !== viewMode);
   viewMode = mode;
   if (gunGroup) gunGroup.visible = (mode === 'first');
@@ -3930,7 +4047,7 @@ function removePickupAt(i){
   pickups.splice(i, 1);
 }
 
-/* Ящик пополняет запас ВСЕХ трёх видов оружия, а не только того, что было у бота */
+/* Ящик пополняет запас ВСЕХ видов оружия, а не только того, что было у бота */
 function giveAmmo(){
   var added = [0,0,0], any = false;
   for (var i=0;i<WEAPONS.length;i++){
@@ -4086,11 +4203,21 @@ function shoot(){
   }
   lastShotTime = now;
   player.ammo[idx]--;
+  if (w.grenade){                                   /* граната: бросок вместо выстрела */
+    throwGrenade(w);
+    updateHUD();
+    if (player.ammo[idx] <= 0) maybeAutoReload();
+    return;
+  }
   player.shotsFired++;
 
   recoilKick();
   spawnMuzzleFlash();
   playShot(w.pitch);
+  if (w.scope && scopeBlend > 0.6){                 /* отдача снайперки подбрасывает прицел */
+    pitch = Math.min(1.4, pitch + 0.025);
+    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+  }
 
   var pelletCount = w.pellets || 1;
   var anyHitBot = false, anyHeadshot = false;
@@ -4110,9 +4237,10 @@ function shoot(){
 
   for (var p=0; p<pelletCount; p++){
     var dir = baseDir.clone();
-    dir.x += (Math.random()-0.5)*w.spread;
-    dir.y += (Math.random()-0.5)*w.spread;
-    dir.z += (Math.random()-0.5)*w.spread;
+    var sp = (w.scope && scopeBlend > 0.6) ? w.spread*0.04 : w.spread;   /* через прицел снайперка бьёт точно */
+    dir.x += (Math.random()-0.5)*sp;
+    dir.y += (Math.random()-0.5)*sp;
+    dir.z += (Math.random()-0.5)*sp;
     dir.normalize();
 
     raycaster.set(origin.clone(), dir);
@@ -4159,6 +4287,163 @@ function shoot(){
   if (player.ammo[idx] <= 0) maybeAutoReload();
 }
 
+/* ---- прицел снайперской винтовки ---- */
+function setScope(on){
+  var w = WEAPONS[player.weaponIndex];
+  if (on && (!w || !w.scope || !player.alive || gameState !== 'playing')) on = false;
+  if (on === scoped) return;
+  if (on){
+    var prev = (viewMode === 'third') ? 'third' : null;
+    scoped = true;
+    setViewMode('first', false);
+    scopePrevView = prev;
+    if (scopeBtnEl) scopeBtnEl.classList.add('on');
+  } else {
+    scoped = false;
+    if (scopePrevView){ var pv = scopePrevView; scopePrevView = null; setViewMode(pv, false); }
+    if (scopeBtnEl) scopeBtnEl.classList.remove('on');
+  }
+}
+
+function lookScale(){
+  return scopeBlend > 0.01 ? Math.max(0.22, camera.fov/BASE_FOV) : 1;
+}
+
+/* ---- гранаты ---- */
+var grenadeGeo = null, grenadeMat = null;
+var _gv = null, _gn = null;
+
+function throwGrenade(w){
+  if (!_gv){ _gv = new THREE.Vector3(); _gn = new THREE.Vector3(); }
+  if (!grenadeGeo){
+    grenadeGeo = new THREE.SphereGeometry(0.1, 10, 8);
+    grenadeMat = new THREE.MeshStandardMaterial({color:0x55612f, emissive:0x1b2008, emissiveIntensity:0.6});
+  }
+  var dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  var mesh = new THREE.Mesh(grenadeGeo, grenadeMat);
+  mesh.position.copy(camera.position).add(dir.clone().multiplyScalar(0.6));
+  mesh.position.y -= 0.15;
+  scene.add(mesh);
+  var spd = 15;
+  grenades.push({mesh:mesh, vx:dir.x*spd, vy:dir.y*spd + 3.2, vz:dir.z*spd, t:0, damage:w.damage, radius:w.radius});
+  recoilKick();
+  playNoise(0.18, 2200, 0.14);
+}
+
+function updateGrenades(dt){
+  if (!grenades.length) return;
+  var lim = currentMap ? currentMap.half - 0.3 : 100;
+  for (var i=grenades.length-1;i>=0;i--){
+    var g = grenades[i], p = g.mesh.position;
+    g.t += dt;
+    g.vy += GRAVITY*dt;
+    var mx = g.vx*dt, my = g.vy*dt, mz = g.vz*dt;
+    var len = Math.sqrt(mx*mx + my*my + mz*mz);
+    var bounced = false;
+    if (len > 1e-5){
+      _gv.set(mx/len, my/len, mz/len);
+      raycaster.set(p, _gv);
+      raycaster.far = len + 0.1;
+      var hits = raycaster.intersectObjects(wallMeshes);
+      raycaster.far = Infinity;
+      if (hits.length){
+        var h = hits[0];
+        if (h.face) _gn.copy(h.face.normal).transformDirection(h.object.matrixWorld);
+        else _gn.set(0,1,0);
+        var vd = g.vx*_gn.x + g.vy*_gn.y + g.vz*_gn.z;
+        if (vd > 0){ _gn.negate(); vd = -vd; }
+        g.vx = (g.vx - 1.5*vd*_gn.x)*0.8;
+        g.vy = (g.vy - 1.5*vd*_gn.y)*0.8;
+        g.vz = (g.vz - 1.5*vd*_gn.z)*0.8;
+        p.set(h.point.x + _gn.x*0.12, h.point.y + _gn.y*0.12, h.point.z + _gn.z*0.12);
+        bounced = true;
+      }
+    }
+    if (!bounced){ p.x += mx; p.y += my; p.z += mz; }
+    p.x = Math.max(-lim, Math.min(lim, p.x));
+    p.z = Math.max(-lim, Math.min(lim, p.z));
+    /* земля и верхушки препятствий */
+    var floorY = groundHeightAt(p.x, p.z, 0.1, p.y) + 0.1;
+    if (p.y < floorY){
+      p.y = floorY;
+      if (g.vy < -1.5) g.vy = -g.vy*0.4; else g.vy = 0;
+      g.vx *= 0.7; g.vz *= 0.7;
+    }
+    if (g.vy === 0){ var fr = Math.exp(-3*dt); g.vx *= fr; g.vz *= fr; }
+    g.mesh.rotation.x += g.vz*dt*2; g.mesh.rotation.z -= g.vx*dt*2;
+    if (g.t >= GRENADE_FUSE){
+      explodeGrenade(g);
+      grenades.splice(i, 1);
+    }
+  }
+}
+
+function explodeGrenade(g){
+  var c = g.mesh.position.clone(); c.y += 0.2;
+  scene.remove(g.mesh);
+  var R = g.radius;
+  function clearLine(to){
+    var d = to.clone().sub(c), dist = d.length();
+    if (dist < 0.01) return true;
+    d.multiplyScalar(1/dist);
+    losRaycaster.set(c, d);
+    losRaycaster.far = dist;
+    var hs = losRaycaster.intersectObjects(wallMeshes);
+    losRaycaster.far = Infinity;
+    return !(hs.length && hs[0].distance < dist - 0.25);
+  }
+  var hitAny = false;
+  bots.forEach(function(b){
+    if (!b.alive) return;
+    var tp = new THREE.Vector3(b.group.position.x, b.group.position.y + 1.0, b.group.position.z);
+    var d = tp.distanceTo(c);
+    if (d > R || !clearLine(tp)) return;
+    b.health -= g.damage*Math.max(0.25, 1 - d/R);
+    hitAny = true;
+    updateBotHealthBar(b);
+    if (b.health <= 0) killBot(b);
+  });
+  if (hitAny){ showHitMarker(false); playHitSound(); }
+  if (player.alive){                                 /* осколки задевают и игрока, но слабее */
+    var pd = camera.position.distanceTo(c);
+    if (pd < R && clearLine(camera.position)) damagePlayer(Math.round(g.damage*Math.max(0.2, 1 - pd/R)*0.5));
+  }
+  var fb = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10),
+    new THREE.MeshBasicMaterial({color:0xffa040, transparent:true, opacity:0.85}));
+  fb.position.copy(c); fb.scale.setScalar(0.3);
+  scene.add(fb);
+  blasts.push({mesh:fb, t:0, R:R});
+  if (blastLight){ blastLight.position.copy(c); blastLight.intensity = 6; }
+  playNoise(0.9, 700, 0.55);
+}
+
+function updateBlasts(dt){
+  var k = 0;
+  for (var i=blasts.length-1;i>=0;i--){
+    var b = blasts[i];
+    b.t += dt;
+    var f = b.t/0.45;
+    if (f >= 1){
+      scene.remove(b.mesh); b.mesh.geometry.dispose(); b.mesh.material.dispose();
+      blasts.splice(i, 1);
+      continue;
+    }
+    b.mesh.scale.setScalar(0.3 + f*b.R*0.55);
+    b.mesh.material.opacity = (1 - f)*0.85;
+    k = Math.max(k, 1 - f);
+  }
+  if (blastLight) blastLight.intensity = 6*k;
+}
+
+function clearGrenades(){
+  grenades.forEach(function(g){ scene.remove(g.mesh); });
+  grenades.length = 0;
+  blasts.forEach(function(b){ scene.remove(b.mesh); b.mesh.geometry.dispose(); b.mesh.material.dispose(); });
+  blasts.length = 0;
+  if (blastLight) blastLight.intensity = 0;
+}
+
 function cancelReload(){
   reloadToken++;
   player.reloading = false;
@@ -4169,6 +4454,7 @@ function reload(){
   var idx = player.weaponIndex;
   var w = WEAPONS[idx];
   if (!player.alive || player.reloading || player.ammo[idx] >= w.mag || player.reserve[idx] <= 0) return;
+  setScope(false);                                   /* на перезарядке прицел опускается */
   player.reloading = true;
   var token = ++reloadToken;
   reloadTagEl.textContent = 'Перезарядка...';
@@ -4188,6 +4474,7 @@ function reload(){
 
 function switchWeapon(idx){
   if (idx === player.weaponIndex || player.reloading) return;
+  setScope(false);
   player.weaponIndex = idx;
   updateWeaponModelForIndex(idx);
   updatePlayerModelWeapon(idx);
@@ -4205,6 +4492,8 @@ function damagePlayer(amount){
     player.alive = false;
     player.deaths++;
     cancelReload();
+    setScope(false); scopeBlend = 0;
+    camera.fov = BASE_FOV; camera.updateProjectionMatrix();
     addKillFeed('Цель устранила вас');
     show(killedOverlayEl);
     killedOverlayEl.classList.add('show');
@@ -4232,11 +4521,36 @@ function respawnPlayer(){
 /* ===================== MOVEMENT ===================== */
 
 /* Прыжок по нажатию: на земле — обычный, в воздухе — ещё один (двойной прыжок) */
+/* Телефон: удержание джойстика по центру 2 секунды — присесть / встать */
+function setJoyRing(p){
+  if (!joyRingEl) return;
+  p = Math.round(p*40)/40;
+  if (p === lastRingP) return;
+  lastRingP = p;
+  joyRingEl.style.setProperty('--p', p);
+  joyRingEl.classList.toggle('show', p > 0);
+}
+
+function updateJoyHold(dt){
+  var jm = Math.hypot(joystickVec.x, joystickVec.y);
+  if (joyTouching && jm < JOY_DEAD){
+    joyHoldT += dt;
+    if (!joyHoldFired && joyHoldT >= JOY_HOLD_SEC){
+      joyHoldFired = true;
+      mobileCrouch = !mobileCrouch;
+      showToast(mobileCrouch ? 'Присед' : 'Стоя', 900);
+      if (navigator.vibrate){ try { navigator.vibrate(35); } catch(e){} }
+    }
+  } else {
+    joyHoldT = 0; joyHoldFired = false;
+  }
+  setJoyRing((joyTouching && !joyHoldFired && joyHoldT > 0.3) ? Math.min(1, joyHoldT/JOY_HOLD_SEC) : 0);
+}
+
 function tryJump(){
   if (gameState !== 'playing' || !player.alive) return;
   if (mobileCrouch){                                  /* на телефоне прыжок сначала поднимает из приседа */
     mobileCrouch = false;
-    var cb = document.getElementById('crouchBtn'); if (cb) cb.classList.remove('on');
     return;
   }
   if (EYE_HEIGHT < STAND_EYE - 0.2) return;            /* из приседа не прыгаем: сначала встаньте */
@@ -4250,6 +4564,7 @@ function tryJump(){
 function updateMovement(dt){
   if (!player.alive) return;
   /* приседание: C (удерживать) или кнопка на телефоне; встать можно, только если над головой есть место */
+  if (isMobile) updateJoyHold(dt);
   var wantCrouch = !!(keys['KeyC'] || mobileCrouch);
   if (!wantCrouch && EYE_HEIGHT < STAND_EYE - 0.02){
     var cf = camera.position.y - EYE_HEIGHT;
@@ -4294,6 +4609,7 @@ function updateMovement(dt){
     running = shiftHeld && isMoving;
   }
 
+  if (scopeBlend > 0.5) speed *= 0.55;               /* с поднятым прицелом двигаемся медленнее */
   var oldX = camera.position.x, oldZ = camera.position.z;
   var newX = oldX + moveX*speed*dt;
   var newZ = oldZ + moveZ*speed*dt;
@@ -4348,7 +4664,12 @@ function updateMovement(dt){
   fpMove += (((isMoving && grounded) ? 1 : 0) - fpMove) * Math.min(1, dt*10);
 
   /* небольшое расширение поля зрения при беге */
+  scopeBlend += ((scoped ? 1 : 0) - scopeBlend) * Math.min(1, dt*9);
+  if (scopeBlend < 0.003) scopeBlend = 0;
   var fov = BASE_FOV + 7*runBlend;
+  fov += (SCOPE_FOV - fov) * scopeBlend;
+  if (gunGroup && viewMode === 'first') gunGroup.visible = !(scopeBlend > 0.45);
+  hudEl.classList.toggle('scoped', scopeBlend > 0.8);
   if (Math.abs(camera.fov - fov) > 0.02){
     camera.fov = fov; camera.updateProjectionMatrix();
     thirdPersonCamera.fov = fov; thirdPersonCamera.updateProjectionMatrix();
@@ -4370,6 +4691,8 @@ function bindInputEvents(){
     if (e.code === 'Digit1') switchWeapon(0);
     if (e.code === 'Digit2') switchWeapon(1);
     if (e.code === 'Digit3') switchWeapon(2);
+    if (e.code === 'Digit4') switchWeapon(3);
+    if (e.code === 'Digit5') switchWeapon(4);
     if (e.code === 'ArrowLeft')  setViewMode('first', true);   /* ← первое лицо */
     if (e.code === 'ArrowRight') setViewMode('third', true);   /* → третье лицо */
     if (e.code === 'KeyV') setViewMode(viewMode === 'first' ? 'third' : 'first', true);
@@ -4389,6 +4712,7 @@ function bindInputEvents(){
       if (gameState === 'paused'){ gameState = 'playing'; hide(pauseEl); }
     } else {
       document.removeEventListener('mousemove', onMouseMove);
+      setScope(false);
       if (gameState === 'playing'){ gameState = 'paused'; show(pauseEl); }
     }
   });
@@ -4399,9 +4723,14 @@ function bindInputEvents(){
       mouseDown = true;
       var w = WEAPONS[player.weaponIndex];
       if (!w.auto) shoot();
+    } else if (e.button === 2){
+      setScope(true);                                /* ПКМ (держать) — прицел снайперки */
     }
   });
-  document.addEventListener('mouseup', function(e){ if (e.button === 0) mouseDown = false; });
+  document.addEventListener('mouseup', function(e){
+    if (e.button === 0) mouseDown = false;
+    if (e.button === 2) setScope(false);
+  });
   document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 
   bindMobileControls();
@@ -4411,6 +4740,7 @@ function bindInputEvents(){
 function bindMobileControls(){
   var joystickId = null, lookId = null;
   var lookLastX = 0, lookLastY = 0;
+  var lookDownX = 0, lookDownY = 0, lookDownT = 0, lookMoved = false, lastTapT = 0;
   var JOY_RADIUS = 46;
 
   function updateJoystick(clientX, clientY){
@@ -4435,13 +4765,24 @@ function bindMobileControls(){
     var t = e.changedTouches[0];
     joystickId = t.identifier;
     updateJoystick(t.clientX, t.clientY);
+    joyTouching = true; joyHoldT = 0; joyHoldFired = false;
   }, {passive:false});
 
   lookLayerEl.addEventListener('touchstart', function(e){
     if ((gameState !== 'playing' && gameState !== 'edit3d') || lookId !== null) return;
     var t = e.changedTouches[0];
+    if (gameState === 'playing'){
+      /* тап по панели патронов — перезарядка (вместо отдельной кнопки R) */
+      var ar = ammoBoxEl.getBoundingClientRect();
+      if (t.clientX >= ar.left - 8 && t.clientX <= ar.right + 8 && t.clientY >= ar.top - 8 && t.clientY <= ar.bottom + 8){
+        e.preventDefault();
+        reload();
+        return;
+      }
+    }
     lookId = t.identifier;
     lookLastX = t.clientX; lookLastY = t.clientY;
+    lookDownX = t.clientX; lookDownY = t.clientY; lookDownT = performance.now(); lookMoved = false;
     e.preventDefault();
   }, {passive:false});
 
@@ -4454,7 +4795,8 @@ function bindMobileControls(){
       } else if (t.identifier === lookId){
         var dx = t.clientX - lookLastX, dy = t.clientY - lookLastY;
         lookLastX = t.clientX; lookLastY = t.clientY;
-        var sens = sensitivity * 0.0028;
+        if (Math.hypot(t.clientX - lookDownX, t.clientY - lookDownY) > 14) lookMoved = true;
+        var sens = sensitivity * 0.0028 * lookScale();
         yaw -= dx*sens;
         pitch -= dy*sens;
         pitch = Math.max(-1.4, Math.min(1.4, pitch));
@@ -4467,8 +4809,23 @@ function bindMobileControls(){
   function endTouch(e){
     for (var i=0;i<e.changedTouches.length;i++){
       var id = e.changedTouches[i].identifier;
-      if (id === joystickId){ joystickId = null; resetJoystick(); }
-      if (id === lookId){ lookId = null; }
+      if (id === joystickId){
+        joystickId = null; resetJoystick();
+        joyTouching = false; joyHoldT = 0; joyHoldFired = false; setJoyRing(0);
+      }
+      if (id === lookId){
+        lookId = null;
+        /* двойной тап по экрану — смена вида (вместо кнопки «Вид») */
+        var nowT = performance.now();
+        if (e.type === 'touchend' && !lookMoved && nowT - lookDownT < 260){
+          if (nowT - lastTapT < 320){
+            lastTapT = 0;
+            if (gameState === 'playing') setViewMode(viewMode === 'first' ? 'third' : 'first', true);
+          } else {
+            lastTapT = nowT;
+          }
+        }
+      }
     }
   }
   document.addEventListener('touchend', endTouch);
@@ -4497,18 +4854,8 @@ function bindMobileControls(){
     if (gameState === 'playing') tryJump();
   }, null);
 
-  bindHoldButton(crouchBtnEl, function(){
-    if (gameState !== 'playing') return;
-    mobileCrouch = !mobileCrouch;
-    crouchBtnEl.classList.toggle('on', mobileCrouch);
-  }, null);
-
-  bindHoldButton(reloadBtnMobileEl, function(){
-    if (gameState === 'playing') reload();
-  }, null);
-
-  bindHoldButton(weaponBtnMobileEl, function(){
-    if (gameState === 'playing') switchWeapon((player.weaponIndex+1) % 3);
+  bindHoldButton(scopeBtnEl, function(){
+    if (gameState === 'playing') setScope(!scoped);
   }, null);
 
   bindHoldButton(pauseBtnMobileEl, function(){
@@ -4519,9 +4866,6 @@ function bindMobileControls(){
     }
   }, null);
 
-  bindHoldButton(viewBtnMobileEl, function(){
-    if (gameState === 'playing') setViewMode(viewMode === 'first' ? 'third' : 'first', true);
-  }, null);
 }
 
 function bindWeaponSlots(){
@@ -4538,7 +4882,7 @@ function bindWeaponSlots(){
 }
 
 function onMouseMove(e){
-  var sens = sensitivity * 0.0022;
+  var sens = sensitivity * 0.0022 * lookScale();
   yaw -= e.movementX * sens;
   pitch -= e.movementY * sens;
   pitch = Math.max(-1.4, Math.min(1.4, pitch));
@@ -4553,6 +4897,7 @@ function updateHUD(){
   var idx = player.weaponIndex;
   var w = WEAPONS[idx];
   weaponNameEl.textContent = w.name;
+  if (scopeBtnEl) scopeBtnEl.classList.toggle('hidden', !w.scope);
   ammoCurEl.textContent = player.ammo[idx];
   ammoResEl.textContent = player.reserve[idx];
   ammoBoxEl.classList.toggle('low', player.ammo[idx] <= Math.ceil(w.mag*0.25));
@@ -6084,8 +6429,8 @@ function bindEditorEvents(){
 
 /* ===================== МОНЕТЫ, МАГАЗИН, РЕКЛАМА ===================== */
 
-var COIN_PER_KILL = 6, COIN_PER_DEATH = 3, COIN_MIN_MATCH = 5;
-var COIN_OUTCOME = {win:30, draw:12, loss:5};
+var COIN_PER_KILL = 7, COIN_PER_DEATH = 3, COIN_MIN_MATCH = 6;
+var COIN_OUTCOME = {win:34, draw:14, loss:6};
 var COIN_DIFF_MULT = {easy:1, normal:1.15, hard:1.3};
 var OUTCOME_LABEL = {win:'Победа', draw:'Ничья', loss:'Поражение'};
 var AD_REWARD = 150, AD_COOLDOWN = 3*60*60*1000, AD_FRAME_MS = 2400;
@@ -6142,6 +6487,7 @@ function upgradeValue(wi, tid, lvl){
   if (tid === 'dmg') return Math.round(b.damage * (1 + 0.1*lvl) * 10) / 10;
   if (tid === 'mag') return Math.max(b.mag + lvl, Math.round(b.mag * (1 + 0.1*lvl)));
   if (tid === 'rel') return Math.round(b.reloadTime * (1 - 0.08*lvl));
+  if (b.grenade) return Math.round(b.radius * (1 + 0.08*lvl) * 10) / 10;   /* у гранаты «точность» — радиус взрыва */
   return b.spread * (1 - 0.08*lvl);
 }
 function fmtUpgradeValue(wi, tid, lvl){
@@ -6149,6 +6495,7 @@ function fmtUpgradeValue(wi, tid, lvl){
   if (tid === 'dmg') return (v % 1 ? v.toFixed(1) : String(v)) + (WEAPONS_BASE[wi].pellets ? '×' + WEAPONS_BASE[wi].pellets : '');
   if (tid === 'mag') return String(v);
   if (tid === 'rel') return (v/1000).toFixed(2) + ' с';
+  if (WEAPONS_BASE[wi].grenade) return upgradeValue(wi, 'acc', lvl).toFixed(1) + ' м';
   return 'разброс −' + (lvl*8) + '%';
 }
 function applyWeaponUpgrades(){
@@ -6157,7 +6504,8 @@ function applyWeaponUpgrades(){
     WEAPONS[i].damage = upgradeValue(i, 'dmg', lv.dmg);
     WEAPONS[i].mag = upgradeValue(i, 'mag', lv.mag);
     WEAPONS[i].reloadTime = upgradeValue(i, 'rel', lv.rel);
-    WEAPONS[i].spread = upgradeValue(i, 'acc', lv.acc);
+    if (WEAPONS_BASE[i].grenade) WEAPONS[i].radius = upgradeValue(i, 'acc', lv.acc);
+    else WEAPONS[i].spread = upgradeValue(i, 'acc', lv.acc);
   }
 }
 function upgradeCost(ti, lvl){ return UPGRADE_TRACKS[ti].base * (lvl + 1); }
@@ -6193,7 +6541,7 @@ function renderWeaponsTab(){
       for (var k=0;k<UPGRADE_MAX;k++) pips += '<span class="pip' + (k < l ? ' on' : '') + '"></span>';
       var valTxt = maxed ? fmtUpgradeValue(wi, t.id, l) + ' (максимум)'
                          : fmtUpgradeValue(wi, t.id, l) + ' → ' + fmtUpgradeValue(wi, t.id, l+1);
-      h += '<div class="up-row"><div><span class="up-name">' + t.name + '</span><span class="up-val">' + valTxt + '</span></div>' +
+      h += '<div class="up-row"><div><span class="up-name">' + (w.grenade && t.id === 'acc' ? 'Радиус взрыва' : t.name) + '</span><span class="up-val">' + valTxt + '</span></div>' +
            '<div class="pips">' + pips + '</div>' +
            '<button type="button" class="chip up-btn' + (maxed ? ' maxed' : (profile.coins < cost ? ' cant' : '')) + '" data-w="' + wi + '" data-t="' + t.id + '"' + (maxed ? ' disabled' : '') + '>' +
            (maxed ? 'Максимум' : 'Улучшить · ' + coinHtml(cost)) + '</button></div>';
@@ -6347,7 +6695,7 @@ function makeAdSpec(){
   var wName = WEAPONS_BASE[wi].name.toLowerCase();
   var heads = ['Докажи, кто здесь лучший стрелок', 'Один выстрел решает всё', 'Карта «' + map.name + '» ждёт тебя',
     'Цель в прицеле. Твой ход.', 'Тренировка без пощады', 'Собери свой стиль бойца', 'Прокачай оружие до максимума'];
-  var subs = ['Тактический шутер против умных ботов', 'Три вида оружия, четыре карты, ноль пощады',
+  var subs = ['Тактический шутер против умных ботов', 'Пять видов оружия, пять карт, ноль пощады',
     'Играй прямо в браузере — без установки', 'Зарабатывай монеты и открывай аксессуары', 'Вид от первого и третьего лица'];
   var badges = ['НОВИНКА', 'ХИТ', 'ИГРАЙ СЕЙЧАС', 'ТОП НЕДЕЛИ', 'ТРЕНИРОВКА'];
   var ctas = ['Играть бесплатно', 'Начать матч', 'В бой!', 'Попробуй прямо сейчас'];
@@ -6590,13 +6938,14 @@ function startMatch(){
 
   applyWeaponUpgrades();
   cancelReload();
+  setScope(false); scopeBlend = 0; clearGrenades();
   medkitTimer = 10;
   player.health = player.maxHealth;
   player.kills = 0; player.deaths = 0;
   player.shotsFired = 0; player.shotsHit = 0;
   player.weaponIndex = 1;
-  player.ammo = [WEAPONS[0].mag, WEAPONS[1].mag, WEAPONS[2].mag];
-  player.reserve = [WEAPONS[0].reserveMax, WEAPONS[1].reserveMax, WEAPONS[2].reserveMax];
+  player.ammo = WEAPONS.map(function(w){ return w.mag; });
+  player.reserve = WEAPONS.map(function(w){ return w.reserveMax; });
   player.alive = true;
   updateWeaponModelForIndex(player.weaponIndex);
   updatePlayerModelWeapon(player.weaponIndex);
@@ -6624,6 +6973,7 @@ function startMatch(){
   updateHUD();
   updateTimerDisplay();
   if (!isMobile) showToast('Вид: ← от первого лица · → от третьего', 3500);
+  else showToast('Присесть: держите джойстик по центру 2 сек', 3500);
 
   gameState = 'playing';
   if (isMobile){
@@ -6636,6 +6986,9 @@ function startMatch(){
 function endMatch(){
   gameState = 'ended';
   resetCrouch();
+  setScope(false); scopeBlend = 0; clearGrenades();
+  hudEl.classList.remove('scoped');
+  camera.fov = BASE_FOV; camera.updateProjectionMatrix();
   if (playerModel) playerModel.scale.y = 1;
   if (document.pointerLockElement) document.exitPointerLock();
   hide(hudEl); hide(mobileControlsEl); hide(weaponSlotsEl); hide(helpBtnEl);
@@ -6675,6 +7028,8 @@ function animate(){
     updateBots(dt, now);
     updateTracers(dt);
     updateShards(dt);
+    updateGrenades(dt);
+    updateBlasts(dt);
     updatePickups(dt);
     updateMedkitSpawner(dt);
     updateMinimap();
