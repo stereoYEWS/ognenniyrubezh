@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Тест сети</title>
+<style>
+  body{font:14px/1.35 monospace;background:#101214;color:#d8dde0;padding:12px;margin:0}
+  h3{margin:8px 0}
+  button,input{font:16px monospace;padding:10px;margin:4px 0;border:1px solid #444;background:#1c2125;color:#fff;border-radius:6px}
+  button{background:#2b4f9e}
+  pre{white-space:pre-wrap;word-break:break-word;margin:6px 0 14px}
+  .ok{color:#6fdc8c}.bad{color:#ff7b72}.dim{color:#8b949e}
+</style>
+</head>
+<body>
+<h3>1. Какие сервисы открываются без VPN</h3>
+<pre id="probes" class="dim">проверяем…</pre>
+
+<h3>2. Тест публичных MQTT-серверов</h3>
+<div class="dim">Откройте эту страницу на ДВУХ устройствах, впишите одинаковый код и нажмите «Старт» на обоих почти одновременно. Тест идёт 20 секунд.</div>
+<input id="code" value="TEST1" size="10"><br>
+<button id="go">Старт теста</button>
+<pre id="out" class="dim">нажмите «Старт»</pre>
+
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+/* ---------- 1. доступность сервисов ---------- */
+var PROBES = [
+  ['GitHub Pages', 'https://pages.github.com'],
+  ['Firebase (скрипты Google)', 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js'],
+  ['Firebase Realtime Database', 'https://nettest-abc123.firebaseio.com'],
+  ['Firebase Hosting (web.app)', 'https://nettest-abc123.web.app'],
+  ['Supabase', 'https://supabase.com'],
+  ['Ably', 'https://rest.ably.io/time'],
+  ['Pusher', 'https://js.pusher.com/8.4/pusher.min.js'],
+  ['Cloudflare workers.dev', 'https://nettest-abc123.workers.dev'],
+  ['Cloudflare pages.dev', 'https://nettest-abc123.pages.dev'],
+  ['Vercel', 'https://nettest-abc123.vercel.app'],
+  ['Netlify', 'https://nettest-abc123.netlify.app'],
+  ['Fly.io', 'https://nettest-abc123.fly.dev'],
+  ['Koyeb', 'https://nettest-abc123.koyeb.app'],
+  ['Railway', 'https://nettest-abc123.up.railway.app'],
+  ['Zeabur', 'https://nettest-abc123.zeabur.app'],
+  ['Glitch', 'https://nettest-abc123.glitch.me'],
+  ['Hugging Face', 'https://nettest-abc123.hf.space'],
+  ['Render', 'https://nettest-abc123.onrender.com'],
+  ['Deno', 'https://nettest-abc123.deno.dev'],
+  ['Heroku', 'https://nettest-abc123.herokuapp.com']
+];
+var probeRes = {};
+function renderProbes(){
+  var lines = PROBES.map(function(p){
+    var r = probeRes[p[0]];
+    return (r === undefined ? '… ' : r ? '<span class="ok">✔ открывается</span> ' : '<span class="bad">✘ нет доступа</span> ') + p[0];
+  });
+  document.getElementById('probes').innerHTML = lines.join('\n');
+}
+PROBES.forEach(function(p){
+  var ctl = new AbortController();
+  var t = setTimeout(function(){ ctl.abort(); }, 7000);
+  fetch(p[1], {mode:'no-cors', signal:ctl.signal, cache:'no-store'})
+    .then(function(){ probeRes[p[0]] = true; })
+    .catch(function(){ probeRes[p[0]] = false; })
+    .then(function(){ clearTimeout(t); renderProbes(); });
+});
+renderProbes();
+
+/* ---------- 2. тест MQTT-брокеров ---------- */
+var BROKERS = [
+  ['EMQX', 'wss://broker.emqx.io:8084/mqtt'],
+  ['HiveMQ', 'wss://broker.hivemq.com:8884/mqtt'],
+  ['Mosquitto', 'wss://test.mosquitto.org:8081'],
+  ['Eclipse', 'wss://mqtt.eclipseprojects.io:443/mqtt']
+];
+var ME = 't' + Math.random().toString(36).slice(2, 8);
+var DURATION = 20, RATE_MS = 100;
+var running = false, tick = 0, st = [];
+
+function render(final){
+  var out = ['Моё устройство: ' + ME + (final ? '   (тест завершён)' : '   секунда ' + tick + ' из ' + DURATION), ''];
+  st.forEach(function(b){
+    out.push(b.name + ': ' + b.status + (b.closes ? ' · разрывов: ' + b.closes : '') + (b.err ? ' · ' + b.err : ''));
+    out.push('  отправлено: ' + b.sent + ' · принято от другого устройства: ' + b.recv);
+    out.push('  принято по секундам: ' + (b.perSec.join(' ') || '—'));
+    out.push('');
+  });
+  document.getElementById('out').textContent = out.join('\n');
+}
+
+function start(){
+  if (running) return;
+  if (typeof mqtt === 'undefined'){ document.getElementById('out').textContent = 'Библиотека mqtt не загрузилась (jsdelivr недоступен).'; return; }
+  running = true; tick = 0;
+  var code = (document.getElementById('code').value || 'TEST1').trim().toUpperCase();
+  st = BROKERS.map(function(b, i){
+    var s = {name:b[0], url:b[1], status:'подключаюсь…', sent:0, recv:0, closes:0, err:'', cur:0, perSec:[], seq:0, c:null, topic:'ognevoy-nettest/' + code + '/m'};
+    try {
+      s.c = mqtt.connect(s.url, {clientId:'nt_' + ME + '_' + i, connectTimeout:8000, reconnectPeriod:0, keepalive:20});
+      s.c.on('connect', function(){ s.status = 'подключено'; s.c.subscribe(s.topic, {qos:0}); });
+      s.c.on('message', function(topic, payload){
+        try { var m = JSON.parse(payload.toString()); if (m && m.f && m.f !== ME){ s.recv++; s.cur++; } } catch(e){}
+      });
+      s.c.on('close', function(){ if (running){ s.closes++; if (s.status === 'подключено') s.status = 'разорвано'; } });
+      s.c.on('error', function(e){ s.err = (e && e.message) ? e.message : String(e); if (s.status === 'подключаюсь…') s.status = 'не подключилось'; });
+    } catch(e){ s.status = 'не подключилось'; s.err = String(e); }
+    return s;
+  });
+  var pub = setInterval(function(){
+    st.forEach(function(s){
+      if (s.status === 'подключено' && s.c && s.c.connected){
+        try { s.c.publish(s.topic, JSON.stringify({f:ME, n:++s.seq}), {qos:0}); s.sent++; } catch(e){}
+      }
+    });
+  }, RATE_MS);
+  var sec = setInterval(function(){
+    tick++;
+    st.forEach(function(s){ s.perSec.push(s.cur); s.cur = 0; });
+    render(false);
+    if (tick >= DURATION){
+      clearInterval(pub); clearInterval(sec); running = false;
+      st.forEach(function(s){ try { s.c.end(true); } catch(e){} });
+      render(true);
+    }
+  }, 1000);
+  render(false);
+}
+document.getElementById('go').addEventListener('click', start);
+</script>
+</body>
+</html>
