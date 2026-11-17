@@ -7203,7 +7203,7 @@ var NET_BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:88
 var NET_ROOT = 'ognevoy-rubezh-2026/';
 /* Адрес собственного сервера-ретранслятора (папка cloudflare), например 'https://rubezh-relay.ваш-ник.workers.dev'.
    Если задан — онлайн работает через него (надёжно). Если пусто — через публичные MQTT-брокеры (нестабильно). */
-var NET_WS_URL = '';
+var NET_WS_URL = 'rubezh-relay.xquozzz01.workers.dev';
 var CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 var net = {on:false, isHost:false, client:null, base:'', hostId:'', code:'', id:'', roster:{}, name:'', lastBy:null, started:false, tAcc:0, busy:false, onHostSeen:null, stats:{up:0, down:0, last:0}, seen:{}, hbTimer:null, joining:false, joinTimer:null, dcs:{}, pcs:{}, lastSt:{}, rtcT:0, rtcTries:0, dcOk:{}, dcSeen:{}, ws:null};
 var netLogLines = [], netRx = {}, netRxShow = '';
