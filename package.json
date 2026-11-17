@@ -1,0 +1,6 @@
+{
+  "name": "rubezh-relay",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": { "wrangler": "^4.0.0" }
+}
