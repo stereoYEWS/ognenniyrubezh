@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Миша Тибеко ест хачапури</title>
+<style>
+:root{--bg1:#2b1a12;--bg2:#6b3a1e;--ink:#fff4dc;--gold:#f5b82e;--red:#c8372d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg1);color:var(--ink);font-family:Georgia,"Times New Roman",serif;overflow:hidden;touch-action:none;user-select:none}
+#wrap{position:relative;height:100%;background:linear-gradient(var(--bg1),var(--bg2))}
+canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;left:0;right:0;top:env(safe-area-inset-top,0px);display:flex;justify-content:space-between;padding:12px 16px;font-size:20px;font-weight:700;pointer-events:none}
+#ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:rgba(30,15,8,.82)}
+#ov h1{font-size:34px;line-height:1.1;margin:0 0 12px;color:var(--gold)}
+#ov p{max-width:300px;margin:0 0 20px;font-size:17px;line-height:1.45}
+button{font:700 20px Georgia,serif;background:var(--gold);color:#3a1d0c;border:0;border-radius:999px;padding:14px 34px;cursor:pointer}
+button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.lvs{display:flex;flex-direction:column;gap:10px;min-width:200px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c"></canvas>
+<div id="hud"><span id="sc">Съедено: 0</span><span id="lv">❤️❤️❤️</span></div>
+<div id="ov">
+<h1>Миша Тибеко<br>ест хачапури</h1>
+<p id="msg">Води Мишу пальцем или стрелками. Лови хачапури, золотые дают +5. Красные острые хачапури с перцем не ешь! Съешь 100 штук и победишь. Выбери уровень:</p>
+<div class="lvs"><button class="lv" data-k="easy">Легко</button><button class="lv" data-k="medium">Средне</button><button class="lv" data-k="hard">Сложно</button></div>
+</div>
+</div>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const ov=document.getElementById('ov'),msg=document.getElementById('msg'),go=document.getElementById('go');
+const scEl=document.getElementById('sc'),lvEl=document.getElementById('lv');
+let W,H,dpr;
+function resize(){dpr=window.devicePixelRatio||1;W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+let bests={};try{bests=JSON.parse(localStorage.getItem('mishaB')||'{}')}catch(e){}
+let px,tx,score,lives,items,spawn,chew,running=false,last=0,pops=[],keys={};
+function reset(){px=tx=W/2;score=0;lives=L.lives;items=[];spawn=0;chew=0;pops=[];upd()}
+function upd(){scEl.textContent='Съедено: '+score+' / 100';lvEl.textContent='❤️'.repeat(Math.max(lives,0))}
+function start(k){L=LV[k];reset();running=true;ov.classList.add('hide');last=performance.now();requestAnimationFrame(loop)}
+const LV={easy:{k:'easy',lives:5,sp:.95,v:130,bad:.2},medium:{k:'medium',lives:3,sp:.8,v:170,bad:.32},hard:{k:'hard',lives:3,sp:.6,v:220,bad:.44}};let L=LV.medium;
+document.querySelectorAll('.lv').forEach(b=>b.onclick=()=>start(b.dataset.k));
+addEventListener('pointermove',e=>{if(running)tx=e.clientX});
+addEventListener('pointerdown',e=>{if(running)tx=e.clientX});
+addEventListener('keydown',e=>{keys[e.key]=1});addEventListener('keyup',e=>{keys[e.key]=0});
+function end(win){
+ running=false;
+ if(score>(bests[L.k]||0)){bests[L.k]=score;try{localStorage.setItem('mishaB',JSON.stringify(bests))}catch(e){}}
+ ov.querySelector('h1').innerHTML=win?'Победа!<br>Съедено 100!':'Миша объелся острого!';
+ msg.textContent='Съедено: '+score+' из 100. Рекорд на этом уровне: '+bests[L.k]+'. Выбери уровень:';
+ ov.classList.remove('hide');
+}
+function khach(x,y,s,gold,hot){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ ctx.fillStyle=hot?'#a82a1c':gold?'#e8a317':'#d9893a';
+ ctx.beginPath();ctx.moveTo(-34,0);ctx.quadraticCurveTo(0,-26,34,0);ctx.quadraticCurveTo(0,26,-34,0);ctx.fill();
+ ctx.fillStyle=hot?'#ff6a3d':gold?'#fff2a8':'#f7d46b';
+ ctx.beginPath();ctx.ellipse(0,0,24,10,0,0,7);ctx.fill();
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(0,0,11,6,0,0,7);ctx.fill();
+ ctx.fillStyle=hot?'#c8200f':gold?'#ff9d00':'#f2a31b';ctx.beginPath();ctx.arc(0,0,4.5,0,7);ctx.fill();
+ if(gold){ctx.fillStyle='#fff';ctx.font='14px sans-serif';ctx.fillText('✦',-30,-10);ctx.fillText('✦',22,8)}
+ ctx.restore();
+}
+function misha(x,y,open){
+ ctx.save();ctx.translate(x,y);
+ const skin='#f0bf98',hair='#4a2a14';
+ ctx.fillStyle='#e9b78d';ctx.beginPath();ctx.arc(-52,58,12,0,7);ctx.arc(52,58,12,0,7);ctx.fill();
+ ctx.fillStyle='#e8913a';ctx.beginPath();ctx.ellipse(0,62,56,46,0,0,7);ctx.fill();
+ ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.ellipse(-12,70,20,26,0,0,7);ctx.fill();
+ ctx.fillStyle=hair;
+ for(let i=0;i<11;i++){const a=Math.PI+i*Math.PI/10;ctx.beginPath();ctx.arc(Math.cos(a)*44,-2+Math.sin(a)*40,13,0,7);ctx.fill()}
+ ctx.fillStyle=skin;ctx.beginPath();ctx.ellipse(0,6,44,38,0,0,7);ctx.fill();
+ ctx.fillStyle=hair;
+ for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(-26+i*13,-26+(i%2)*4,10,0,7);ctx.fill()}
+ ctx.fillStyle='rgba(235,100,90,.45)';ctx.beginPath();ctx.arc(-28,16,9,0,7);ctx.arc(28,16,9,0,7);ctx.fill();
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-15,-2,6,0,7);ctx.arc(15,-2,6,0,7);ctx.fill();
+ ctx.fillStyle='#1c1410';ctx.beginPath();ctx.arc(-14,-1,3,0,7);ctx.arc(16,-1,3,0,7);ctx.fill();
+ ctx.fillStyle='#7a1f1f';ctx.beginPath();
+ if(open){ctx.ellipse(0,24,16,open>1?16:11,0,0,7)}else{ctx.ellipse(0,22,12,6,0,0,Math.PI)}
+ ctx.fill();
+ ctx.strokeStyle='rgba(150,90,60,.5)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,34,20,.2,Math.PI-.2);ctx.stroke();
+ ctx.restore();
+}
+function loop(t){
+ if(!running)return;
+ const dt=Math.min((t-last)/1000,.05);last=t;
+ if(keys.ArrowLeft||keys.a)tx-=520*dt;
+ if(keys.ArrowRight||keys.d)tx+=520*dt;
+ tx=Math.max(40,Math.min(W-40,tx));px+=(tx-px)*Math.min(1,dt*14);
+ const py=H-110,lvl=Math.min(score/100,1);
+ spawn-=dt;
+ if(spawn<=0){
+  spawn=L.sp*(1-.4*lvl);
+  const r=Math.random(),type=r<L.bad?'b':r<L.bad+.07?'g':'h';
+  items.push({x:30+Math.random()*(W-60),y:-30,vy:L.v+110*lvl+Math.random()*60,type,rot:Math.random()*6});
+ }
+ for(const it of items){
+  it.y+=it.vy*dt;it.rot+=dt*2;
+  if(!it.done&&Math.abs(it.x-px)<58&&Math.abs(it.y-(py+5))<38){
+   it.done=true;
+   if(it.type==='b'){lives--;chew=.5;pops.push({x:px,y:py-60,t:'Ай, остро!',life:1,c:'#ff6a5a'})}
+   else{const p=it.type==='g'?5:1;score+=p;chew=.35;pops.push({x:px,y:py-60,t:it.type==='g'?'Ням! +5':'Ням!',life:1,c:'#ffd45a'})}
+   upd();
+  }
+ }
+ items=items.filter(i=>!i.done&&i.y<H+40);
+ chew=Math.max(0,chew-dt);
+ ctx.clearRect(0,0,W,H);
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(0,H-24,W,24);
+ for(const it of items){
+  if(it.type==='b'){khach(it.x,it.y,.8,0,1);ctx.font='26px serif';ctx.textAlign='center';ctx.fillText('🌶️',it.x,it.y+9)}
+  else khach(it.x,it.y,.8,it.type==='g');
+ }
+ const open=chew>0?(Math.floor(chew*14)%2?2:1):(items.some(i=>i.type!=='b'&&Math.abs(i.x-px)<70&&i.y>py-200&&i.y<py)?1:0);
+ misha(px,py,open);
+ ctx.textAlign='center';ctx.font='700 20px Georgia,serif';
+ for(const p of pops){p.y-=40*dt;p.life-=dt*1.2;ctx.globalAlpha=Math.max(p.life,0);ctx.fillStyle=p.c;ctx.fillText(p.t,p.x,p.y)}
+ ctx.globalAlpha=1;pops=pops.filter(p=>p.life>0);
+ if(lives<=0){end(false);return}if(score>=100){end(true);return}
+ requestAnimationFrame(loop);
+}
+reset();ctx.clearRect(0,0,W,H);misha(W/2,H-110,1);
+</script>
+</body>
+</html>
